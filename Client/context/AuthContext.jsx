@@ -61,12 +61,23 @@ export const AuthProvider = ({ children }) => {
     toast.success("Logged out successfully");
   };
 
-  // Update profile
+  // Update profile (add cache-busting and optimistic UI)
   const updateProfile = async (body) => {
     try {
+      // Optimistic update for snappier UX
+      if (body.fullName || body.bio || body.profilePic) {
+        setAuthUser(prev => prev ? { ...prev, fullName: body.fullName ?? prev.fullName, bio: body.bio ?? prev.bio } : prev);
+      }
+
       const { data } = await axios.put("/api/auth/update-profile", body);
       if (data.success) {
-        setAuthUser(data.user);
+        const ts = Date.now();
+        const nextUser = {
+          ...data.user,
+          // cache-bust profilePic so browser/CDN fetches the fresh image immediately
+          profilePic: data.user?.profilePic ? `${data.user.profilePic}?t=${ts}` : data.user?.profilePic,
+        };
+        setAuthUser(nextUser);
         toast.success("Profile updated successfully");
       }
     } catch (error) {
@@ -79,7 +90,7 @@ export const AuthProvider = ({ children }) => {
     if (!userData || socket?.connected) return;
 
     const newSocket = io(backendUrl, {
-      auth: { token: localStorage.getItem("token") }, // ✅ send JWT for socket
+      auth: { token: localStorage.getItem("token") }, // send JWT for socket
       query: { userId: userData._id },
     });
 
