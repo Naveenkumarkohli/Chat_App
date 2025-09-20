@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 // Initialize socket.io server
 export const io = new Server(server, {
-   cors: {origin: "*"}
+  cors: { origin: process.env.CLIENT_ORIGIN || "*" }
 })
 
 // strore online users
@@ -40,7 +40,7 @@ io.on("connection", (socket)=>{
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 const corsOptions = {
-  origin: true, // reflect request origin
+  origin: process.env.CLIENT_ORIGIN || true, // set your deployed frontend origin
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: false,
 };

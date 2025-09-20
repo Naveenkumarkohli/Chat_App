@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import assets from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../../context/AuthContext';
@@ -8,6 +8,8 @@ const Sidebar = () => {
   const { getUsers, users, SelectedUser, setSelectedUser, unseenMessages } = useContext(ChatContext)
   const { logout, onlineUsers } = useContext(AuthContext)
   const [input, setInput] = useState("")  // ✅ keep string state
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef(null)
 
   const navigate = useNavigate()
 
@@ -19,18 +21,50 @@ const Sidebar = () => {
     getUsers()
   }, [onlineUsers])
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setIsMenuOpen(false)
+      }
+    }
+    document.addEventListener('click', handleClickOutside, true)
+    return () => document.removeEventListener('click', handleClickOutside, true)
+  }, [])
+
   return (
     <div className={`bg-[#8185B2]/10 h-full p-5 rounded-r-xl overflow-y-scroll text-white ${SelectedUser ? 'max-md:hidden' : ''}`}>
       {/* Header */}
       <div className='pb-5'>
         <div className='flex justify-between items-center'>
           <img src={assets.logo} alt="logo" className='max-w-40' />
-          <div className='relative py-2 group'>
-            <img src={assets.menu_icon} alt="menu" className='max-h-5 cursor-pointer' />
-            <div className='absolute top-full right-0 z-20 w-32 p-5 rounded-md bg-[#282142] border border-gray-600 text-gray-100 hidden group-hover:block'>
-              <p onClick={() => navigate('/profile')} className='cursor-pointer text-sm'>Edit Profile</p>
+          <div ref={menuRef} className='relative py-2'>
+            <button
+              type='button'
+              aria-haspopup='menu'
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((v) => !v)}
+              className='p-2 -m-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400'
+            >
+              <img src={assets.menu_icon} alt="menu" className='max-h-5 pointer-events-none' />
+            </button>
+            <div className={`absolute top-full right-0 z-50 w-40 p-4 mt-2 rounded-md bg-[#282142] border border-gray-600 text-gray-100 shadow-lg ${isMenuOpen ? 'block' : 'hidden'}`} role='menu'>
+              <p
+                onClick={() => { setIsMenuOpen(false); navigate('/profile') }}
+                className='cursor-pointer text-sm hover:text-white'
+                role='menuitem'
+                tabIndex={0}
+              >
+                Edit Profile
+              </p>
               <hr className='my-2 border-gray-500' />
-              <p onClick={logout} className='cursor-pointer text-sm'>Logout</p>
+              <p
+                onClick={() => { setIsMenuOpen(false); logout() }}
+                className='cursor-pointer text-sm hover:text-white'
+                role='menuitem'
+                tabIndex={0}
+              >
+                Logout
+              </p>
             </div>
           </div>
         </div>
